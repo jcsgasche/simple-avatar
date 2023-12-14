@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Interactive Image Audio</title>
+    <style>
+        #myImage {
+            width: 300px;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <img id="myImage" src="spriteClosed.png" alt="Interactive Image"/>
+    <script>
+        let imgElement = document.getElementById('myImage');
+        let images = ['spriteClosed.png', 'spriteOpen.jpg', 'spriteOpenBig.jpg', 'spriteOpenSmall.jpg'];
+        let currentImage = 0;
+
+        // Check for browser support of getUserMedia
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            // Request access to the microphone
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    const audioContext = new AudioContext();
+                    const analyser = audioContext.createAnalyser();
+                    const microphone = audioContext.createMediaStreamSource(stream);
+                    microphone.connect(analyser);
+
+                    // Analyze the audio stream
+                    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+                    const updateImage = () => {
+                        analyser.getByteFrequencyData(dataArray);
+                        
+                        // Simple sound detection logic (customize as needed)
+                        let sum = dataArray.reduce((a, b) => a + b, 0);
+                        if (sum > 1000) { // Threshold, adjust as needed
+                            currentImage = (currentImage + 1) % images.length;
+                            imgElement.src = images[currentImage];
+                        }
+
+                        requestAnimationFrame(updateImage);
+                    };
+                    updateImage();
+                })
+                .catch(err => {
+                    console.error('Error accessing the microphone', err);
+                });
+        } else {
+            console.log('getUserMedia not supported in this browser.');
+        }
+    </script>
+</body>
+</html>
