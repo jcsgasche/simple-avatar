@@ -1,54 +1,62 @@
 <!DOCTYPE html>
-<html>
+<html lang="de" >
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interactive Image Audio</title>
-    <style>
-        #myImage {
-            width: 300px;
-            height: auto;
-        }
-    </style>
     <link  rel="stylesheet" href="style.css">
 </head>
 <body>
-    <img id="Robot" src="spriteClosed.png" alt="Interactive Image"/>
+    <img id="Robot" src="spriteClosed.png" alt="Talking avatar for the MiR robot"/>
     <script>
-        let imgElement = document.getElementById('myImage');
-        let images = ['spriteClosed.png', 'spriteOpen.jpg', 'spriteOpenBig.jpg', 'spriteOpenSmall.jpg'];
-        let currentImage = 0;
-
-        // Check for browser support of getUserMedia
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-            // Request access to the microphone
-            navigator.mediaDevices.getUserMedia({ audio: true })
-                .then(stream => {
-                    const audioContext = new AudioContext();
-                    const analyser = audioContext.createAnalyser();
-                    const microphone = audioContext.createMediaStreamSource(stream);
-                    microphone.connect(analyser);
-
-                    // Analyze the audio stream
-                    const dataArray = new Uint8Array(analyser.frequencyBinCount);
-                    const updateImage = () => {
-                        analyser.getByteFrequencyData(dataArray);
-                        
-                        // Simple sound detection logic (customize as needed)
-                        let sum = dataArray.reduce((a, b) => a + b, 0);
-                        if (sum > 1000) { // Threshold, adjust as needed
-                            currentImage = (currentImage + 1) % images.length;
-                            imgElement.src = images[currentImage];
-                        }
-
-                        requestAnimationFrame(updateImage);
-                    };
-                    updateImage();
-                })
-                .catch(err => {
-                    console.error('Error accessing the microphone', err);
-                });
-        } else {
-            console.log('getUserMedia not supported in this browser.');
+        // Check if the browser supports the Web Audio API
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            alert("Your browser does not support the Web Audio API. Please use a different browser.");
+            throw new Error("Web Audio API not supported");
         }
+
+        // Request access to the microphone
+        navigator.mediaDevices.getUserMedia({audio:true, video:false})
+            .then(stream => {
+                const audioContext = new AudioContext();
+                const audioInput = audioContext.createMediaStreamSource(stream);
+                const analyser = audioContext.createAnalyser();
+                audioInput.connect(analyser)
+
+                const dataArray = new Uint8Array(analyser.frequencyBinCount);
+                const imageElement = document.getElementById('Robot');
+                let currentImageIndex = 0;
+                const imageSources = ['spriteClosed.png', 'spriteOpen.png', 'spriteOpenBig.png', 'spriteOpenSmall.png']
+
+                let isSilent = false;
+
+                function switchImage() {
+                    analyser.getByteFrequencyData(dataArray);
+                    let sum = dataArray.reduce((a,b) => a + b, 0);
+                    let average = sum / dataArray.length;
+
+                    if (average > 0) {
+                        if (isSilent) {
+                            isSilent = false; // Reset the flag when sound is detected
+                            currentImageIndex = 0; // Start from the first image again
+                        }
+                        imageElement.src = imageSources[currentImageIndex];
+                        currentImageIndex = (currentImageIndex + 1) % imageSources.length;
+                    } else {
+                        if (!isSilent) {
+                            isSilent = true; // Set the flag when it becomes silent
+                            currentImageIndex = 0; // Reset to the first image
+                            imageElement.src = imageSources[currentImageIndex];
+                        }
+                    }
+                }
+
+                setInterval(switchImage, 75)
+            })
+            .catch(error => {
+                console.error('Access to audio input was denied or an error occurred:', error);
+            });
+
     </script>
 </body>
 </html>
