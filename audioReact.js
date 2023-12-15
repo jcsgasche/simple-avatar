@@ -15,7 +15,7 @@ navigator.mediaDevices.getUserMedia({audio:true, video:false})
         const dataArray = new Uint8Array(analyser.frequencyBinCount);
         const imageElement = document.getElementById('Robot');
         let currentImageIndex = 0;
-        const imageSources = ['spriteClosed.png', 'spriteOpen.png', 'spriteOpenBig.png', 'spriteOpenSmall.png']
+        const imageSources = ['robotClosed.png', 'robotOpen.png', 'robotOpenBig.png', 'robotOpenSmall.png']
 
         let isSilent = false;
 
