@@ -10,6 +10,7 @@ navigator.mediaDevices.getUserMedia({audio:true, video:false})
         const audioContext = new AudioContext();
         const audioInput = audioContext.createMediaStreamSource(stream);
         const analyser = audioContext.createAnalyser();
+        analyser.fftSize = 512;
         audioInput.connect(analyser)
 
         const dataArray = new Uint8Array(analyser.frequencyBinCount);
@@ -24,7 +25,7 @@ navigator.mediaDevices.getUserMedia({audio:true, video:false})
             let sum = dataArray.reduce((a,b) => a + b, 0);
             let average = sum / dataArray.length;
 
-            if (average > 0) {
+            if (average > 35) {
                 if (isSilent) {
                     isSilent = false; // Reset the flag when sound is detected
                     currentImageIndex = 0; // Start from the first image again
